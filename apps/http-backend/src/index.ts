@@ -1,16 +1,13 @@
 import express from "express"
+import { middleware } from "./middleware"
 
 const app = express()
 
-app.post("/signup", (req, res) => {
-  res.json({ msg: "Hello " })
-})
+app.post("/signup", (req, res) => {})
 
 app.post("/signin", (req, res) => {})
 
-app.post("/signin", (req, res) => {})
-
-app.post("/room", (req, res) => {})
+app.post("/room", middleware, (req, res) => {})
 
 const PORT = process.env.PORT || 5000
 
