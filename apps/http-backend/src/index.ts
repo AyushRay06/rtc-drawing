@@ -2,6 +2,8 @@ import express from "express"
 import { middleware } from "./middleware"
 import { CreateUserSchema, SigninSchema } from "@repo/common/types"
 import { prismaClient } from "@repo/database/prismaClient"
+import jwt from "jsonwebtoken"
+import { JWT_SECRET } from "@repo/backend-common/config"
 const app = express()
 app.use(express.json())
 
@@ -24,9 +26,11 @@ app.post("/signup", async (req, res) => {
     }
 
     const newUser = await prismaClient.user.create({
-      name: parsedData.data?.name,
-      password: parsedData.data?.password,
-      email: parsedData.data?.email,
+      data: {
+        name: parsedData.data?.name,
+        password: parsedData.data?.password,
+        email: parsedData.data?.email,
+      },t
     })
 
     res.status(200).json({ msg: "User created Successfully" })
@@ -35,17 +39,36 @@ app.post("/signup", async (req, res) => {
   }
 })
 
-app.post("/signin", (req, res) => {
+app.post("/signin", async (req, res) => {
   try {
-    const data = SigninSchema.safeParse(req.body)
-    if (!data.success) {
+    const parsedData = SigninSchema.safeParse(req.body)
+    if (!parsedData.success) {
       res.status(403).json({
         msg: "Invalid Input",
       })
       return
     }
 
-    const { email, password } = req.body
+    const user = await prismaClient.user.findunique({
+      where: {
+        email: parsedData.data.email,
+        passwoed: parsedData.data.password,
+      },
+    })
+
+    if (!user) {
+      res.status(400).json({ msg: "User not found" })
+      return
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user?.id,
+      },
+      JWT_SECRET
+    )
+
+    res.json({ token })
   } catch (error) {}
 })
 
